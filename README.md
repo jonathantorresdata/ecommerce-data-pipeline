@@ -50,4 +50,18 @@ flowchart LR
 ## Data source
 
 Data: [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) (Kaggle, CC BY-NC-SA 4.0).
-The raw data is **not** included in this repository; setup instructions will be added in Phase 1.
+The raw data is **not** included in this repository. See [Getting started](#getting-started) to download it.
+
+## Getting started
+
+Requirements: Python 3.10+ and Git.
+
+```bash
+git clone git@github.com:jonathantorresdata/ecommerce-data-pipeline.git
+cd ecommerce-data-pipeline
+python3 -m venv .venv
+source .venv/bin/activate
+python scripts/download_data.py
+```
+
+The download script fetches the dataset from Kaggle (no account required), extracts the 9 CSV files into `data/raw/` and verifies that all of them are present. It is idempotent: running it again does nothing if the files already exist (use `--force` to download again).
