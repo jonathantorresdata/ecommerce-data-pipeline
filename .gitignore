@@ -1,0 +1,30 @@
+# --- Secrets: never commit credentials ---
+.env
+!.env.example
+
+# --- Python virtual environment ---
+.venv/
+
+# --- Data: downloaded from Kaggle, never versioned ---
+data/
+*.duckdb
+*.duckdb.wal
+
+# --- Python cache and tooling ---
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+
+# --- Logs ---
+logs/
+*.log
+
+# --- Local assistant / personal notes ---
+CLAUDE.md
+.claude/
+
+# --- Editor and OS files ---
+.vscode/
+.DS_Store
+Thumbs.db
