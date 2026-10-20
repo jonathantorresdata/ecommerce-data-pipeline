@@ -39,13 +39,23 @@ flowchart LR
 
 ## Roadmap
 
-- [ ] **Phase 1 — Ingestion:** load the raw CSV files into a local database and answer the first business questions with SQL.
+- [x] **Phase 1 — Ingestion:** load the raw CSV files into a local database and answer the first business questions with SQL.
 - [ ] **Phase 2 — Data quality:** detect and handle nulls, duplicates and broken records with automated checks.
 - [ ] **Phase 3 — Dimensional modeling:** star schema with fact and dimension tables.
 - [ ] **Phase 4 — Cloud:** move the warehouse to BigQuery.
 - [ ] **Phase 5 — dbt:** layered transformations with tests and documentation.
 - [ ] **Phase 6 — Automation:** one-command pipeline with logging, error handling and a daily schedule.
 - [ ] **Phase 7 — Delivery:** Power BI dashboard and full documentation.
+
+## Data profiling findings
+
+Before building anything, the raw data was profiled with SQL ([queries](sql/exploration/) · [source data model](docs/source_data_model.md)). Key findings that shape the next phases:
+
+- **`customer_id` is not a customer.** It is one per order; the real person is `customer_unique_id` (96,096 people, ~3,345 orders from repeat customers).
+- **Grain matters.** `order_items` has one row per product (112,650 rows for 98,666 orders) and `geolocation` has ~52 rows per zip code, so careless joins multiply rows.
+- **Data quality issues.** 775 orders have no items and 2 delivered orders have no delivery date (to be handled in Phase 2).
+- **Incomplete months.** The first and last months are almost empty; complete data runs from 2017-01 to 2018-08, the candidate range for the live-store replay.
+
 
 ## Data source
 
