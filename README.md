@@ -40,7 +40,7 @@ flowchart LR
 ## Roadmap
 
 - [x] **Phase 1 — Ingestion:** load the raw CSV files into a local database and answer the first business questions with SQL.
-- [ ] **Phase 2 — Data quality:** detect and handle nulls, duplicates and broken records with automated checks.
+- [x] **Phase 2 — Data quality:** detect and handle nulls, duplicates and broken records with automated checks.
 - [ ] **Phase 3 — Dimensional modeling:** star schema with fact and dimension tables.
 - [ ] **Phase 4 — Cloud:** move the warehouse to BigQuery.
 - [ ] **Phase 5 — dbt:** layered transformations with tests and documentation.
@@ -57,7 +57,14 @@ Before building anything, the raw data was profiled with SQL ([queries](sql/expl
 - **Incomplete months.** The first and last months are almost empty; complete data runs from 2017-01 to 2018-08, the candidate range for the live-store replay.
 
 
+## Data quality
+
+The `silver` layer applies the decisions in [docs/data_quality_decisions.md](docs/data_quality_decisions.md): no row is deleted silently; issues are fixed when the fix is safe or flagged with a column otherwise.
+
+After every build, `pipeline/check_quality.py` runs 13 automated checks (unique keys, every relationship exists, no impossible dates or prices) and stops the pipeline if any fails.
+
 ## Data source
+
 
 Data: [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) (Kaggle, CC BY-NC-SA 4.0).
 The raw data is **not** included in this repository. See [Getting started](#getting-started) to download it.
@@ -73,6 +80,10 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 python scripts/download_data.py
+python pipeline/load_raw.py
+python pipeline/build_silver.py
+python pipeline/check_quality.py
+
 ```
 
 The download script fetches the dataset from Kaggle (no account required), extracts the 9 CSV files into `data/raw/` and verifies that all of them are present. It is idempotent: running it again does nothing if the files already exist (use `--force` to download again).
