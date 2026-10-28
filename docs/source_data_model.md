@@ -33,7 +33,7 @@ erDiagram
 
 - `customer_id` is one per order. Real customers are `customer_unique_id`: 96,096 people, so ~3,345 orders come from repeat customers.
 - 775 orders have no items.
-- 2 orders are `delivered` but have no delivery date.
+- 8 orders are `delivered` but have no delivery date, and 6 `canceled` orders have one.
 - Orders go from 2016-09-04 to 2018-10-17, but the first and last months are almost empty. Complete months: 2017-01 to 2018-08.
 - `geolocation` has many rows per zip code: it must be deduplicated before joining, or rows multiply.
 

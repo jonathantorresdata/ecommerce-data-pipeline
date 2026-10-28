@@ -53,7 +53,7 @@ Before building anything, the raw data was profiled with SQL ([queries](sql/expl
 
 - **`customer_id` is not a customer.** It is one per order; the real person is `customer_unique_id` (96,096 people, ~3,345 orders from repeat customers).
 - **Grain matters.** `order_items` has one row per product (112,650 rows for 98,666 orders) and `geolocation` has ~52 rows per zip code, so careless joins multiply rows.
-- **Data quality issues.** 775 orders have no items and 2 delivered orders have no delivery date (to be handled in Phase 2).
+- **Data quality issues.** 775 orders have no items, 8 delivered orders have no delivery date and 6 canceled orders have one (flagged in Phase 2).
 - **Incomplete months.** The first and last months are almost empty; complete data runs from 2017-01 to 2018-08, the candidate range for the live-store replay.
 
 
