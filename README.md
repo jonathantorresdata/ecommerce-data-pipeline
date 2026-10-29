@@ -1,6 +1,6 @@
 # E-commerce Data Pipeline
 
-End-to-end data platform for a Brazilian e-commerce marketplace: ingestion, data quality, dimensional modeling, BigQuery and dbt, running every day as a **live store**.
+End-to-end data platform for a Brazilian e-commerce marketplace: ingestion, data quality, dimensional modeling, Azure Databricks and dbt, running every day as a **live store**.
 
 > **Status:** in active development. See the [roadmap](#roadmap).
 
@@ -23,7 +23,7 @@ flowchart LR
     C --> D[Silver<br/>clean data + quality checks]
     D --> E[Gold<br/>star schema]
     E --> F[Power BI<br/>dashboard]
-    G[GitHub Actions<br/>daily schedule] -.-> B
+    G[Azure Data Factory<br/>daily schedule] -.-> B
 ```
 
 ## Tech stack
@@ -32,9 +32,10 @@ flowchart LR
 |---|---|
 | Languages | Python, SQL |
 | Local warehouse | DuckDB |
-| Cloud warehouse | Google Cloud BigQuery |
-| Transformations | dbt (bronze / silver / gold layers) |
-| Orchestration | GitHub Actions |
+| Cloud platform | Microsoft Azure (Data Lake Storage, Databricks) |
+| Transformations | dbt on Databricks (bronze / silver / gold layers) |
+| Orchestration | Azure Data Factory |
+| CI | GitHub Actions (automated tests) |
 | Consumption | Power BI |
 
 ## Roadmap
@@ -42,9 +43,9 @@ flowchart LR
 - [x] **Phase 1 — Ingestion:** load the raw CSV files into a local database and answer the first business questions with SQL.
 - [x] **Phase 2 — Data quality:** detect and handle nulls, duplicates and broken records with automated checks.
 - [ ] **Phase 3 — Dimensional modeling:** star schema with fact and dimension tables.
-- [ ] **Phase 4 — Cloud:** move the warehouse to BigQuery.
+- [ ] **Phase 4 — Cloud:** move the data platform to Azure (Data Lake Storage + Databricks).
 - [ ] **Phase 5 — dbt:** layered transformations with tests and documentation.
-- [ ] **Phase 6 — Automation:** one-command pipeline with logging, error handling and a daily schedule.
+- [ ] **Phase 6 — Automation:** one-command pipeline with logging, error handling and a daily schedule in Azure Data Factory.
 - [ ] **Phase 7 — Delivery:** Power BI dashboard and full documentation.
 
 ## Data profiling findings
