@@ -1,4 +1,4 @@
-"""Run data quality checks on the silver layer.
+"""Run data quality checks on the silver and gold layers.
 
 Each check is a SQL query that counts the rows breaking a rule. A check passes when
 the count is 0. If any check fails, the script exits with code 1 so the pipeline stops.
@@ -43,6 +43,20 @@ CHECKS = {
         "SELECT count(*) FROM silver.order_items WHERE price <= 0 OR freight_value < 0",
     "order_reviews: score between 1 and 5":
         "SELECT count(*) FROM silver.order_reviews WHERE review_score NOT BETWEEN 1 AND 5",
+    "gold dim_customers: one row per person":
+        "SELECT count(*) - count(DISTINCT customer_unique_id) FROM gold.dim_customers",
+    "gold fact_orders: one row per order":
+        "SELECT count(*) - count(DISTINCT order_id) FROM gold.fact_orders",
+    "gold fact_order_items: same rows as silver (join did not multiply)":
+        "SELECT (SELECT count(*) FROM gold.fact_order_items) - (SELECT count(*) FROM silver.order_items)",
+    "gold fact_order_items: every product exists in dim_products":
+        "SELECT count(*) FROM gold.fact_order_items WHERE product_id NOT IN (SELECT product_id FROM gold.dim_products)",
+    "gold fact_order_items: every seller exists in dim_sellers":
+        "SELECT count(*) FROM gold.fact_order_items WHERE seller_id NOT IN (SELECT seller_id FROM gold.dim_sellers)",
+    "gold fact_order_items: every customer exists in dim_customers":
+        "SELECT count(*) FROM gold.fact_order_items WHERE customer_unique_id NOT IN (SELECT customer_unique_id FROM gold.dim_customers)",
+    "gold fact_orders: every purchase date exists in dim_date":
+        "SELECT count(*) FROM gold.fact_orders WHERE purchase_date NOT IN (SELECT date_day FROM gold.dim_date)",
 }
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
