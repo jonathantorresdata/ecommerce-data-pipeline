@@ -42,7 +42,7 @@ flowchart LR
 
 - [x] **Phase 1 — Ingestion:** load the raw CSV files into a local database and answer the first business questions with SQL.
 - [x] **Phase 2 — Data quality:** detect and handle nulls, duplicates and broken records with automated checks.
-- [ ] **Phase 3 — Dimensional modeling:** star schema with fact and dimension tables.
+- [x] **Phase 3 — Dimensional modeling:** star schema with fact and dimension tables.
 - [ ] **Phase 4 — Cloud:** move the data platform to Azure (Data Lake Storage + Databricks).
 - [ ] **Phase 5 — dbt:** layered transformations with tests and documentation.
 - [ ] **Phase 6 — Automation:** one-command pipeline with logging, error handling and a daily schedule in Azure Data Factory.
@@ -62,7 +62,13 @@ Before building anything, the raw data was profiled with SQL ([queries](sql/expl
 
 The `silver` layer applies the decisions in [docs/data_quality_decisions.md](docs/data_quality_decisions.md): no row is deleted silently; issues are fixed when the fix is safe or flagged with a column otherwise.
 
-After every build, `pipeline/check_quality.py` runs 13 automated checks (unique keys, every relationship exists, no impossible dates or prices) and stops the pipeline if any fails.
+After every build, `pipeline/check_quality.py` runs 20 automated checks (unique keys, every relationship exists, no impossible dates or prices, joins that do not multiply rows) and stops the pipeline if any fails.
+
+## Star schema
+
+The `gold` layer is a star schema with two fact tables (`fact_order_items`, one row per product sold, and `fact_orders`, one row per order) and four dimensions (customers, products, sellers and dates). Grain, diagram and design decisions: [docs/gold_model.md](docs/gold_model.md).
+
+**First result:** late deliveries hurt reviews. Orders delivered on time average **4.29** stars; late orders average **2.57**.
 
 ## Data source
 
@@ -83,6 +89,7 @@ pip install -r requirements.txt
 python scripts/download_data.py
 python pipeline/load_raw.py
 python pipeline/build_silver.py
+python pipeline/build_gold.py
 python pipeline/check_quality.py
 
 ```
