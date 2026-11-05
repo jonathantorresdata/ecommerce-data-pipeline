@@ -28,3 +28,9 @@ CLAUDE.md
 .vscode/
 .DS_Store
 Thumbs.db
+# --- Terraform: plugins and local state (state contains secrets) ---
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
