@@ -178,3 +178,52 @@ output "storage_account_key" {
   value     = azurerm_storage_account.lake.primary_access_key
   sensitive = true
 }
+
+# --- Code: SQL files and the notebook that builds bronze, silver and gold ---
+
+locals {
+  code_root = "/Shared/ecommerce-pipeline"
+  sql_files = fileset("${path.module}/../sql", "{silver,gold,databricks}/**/*.sql")
+}
+
+resource "databricks_directory" "code" {
+  for_each = toset(concat([local.code_root], [for f in local.sql_files : "${local.code_root}/sql/${dirname(f)}"]))
+  path     = each.key
+}
+
+resource "databricks_workspace_file" "sql" {
+  for_each   = local.sql_files
+  depends_on = [databricks_directory.code]
+  source     = "${path.module}/../sql/${each.value}"
+  path       = "${local.code_root}/sql/${each.value}"
+}
+
+resource "databricks_notebook" "build_lakehouse" {
+  depends_on = [databricks_directory.code]
+  source     = "${path.module}/../databricks/build_lakehouse.py"
+  path       = "${local.code_root}/build_lakehouse"
+}
+
+resource "databricks_job" "build_lakehouse" {
+  name = "build-lakehouse"
+
+  task {
+    task_key            = "build_lakehouse"
+    existing_cluster_id = databricks_cluster.main.id
+
+    notebook_task {
+      notebook_path = databricks_notebook.build_lakehouse.path
+      base_parameters = {
+        catalog    = databricks_catalog.olist.name
+        bronze_url = databricks_external_location.bronze.url
+        sql_dir    = "/Workspace${local.code_root}/sql"
+      }
+    }
+  }
+
+  depends_on = [databricks_workspace_file.sql, databricks_schema.layers]
+}
+
+output "job_url" {
+  value = "https://${azurerm_databricks_workspace.main.workspace_url}/jobs/${databricks_job.build_lakehouse.id}"
+}
