@@ -252,18 +252,7 @@ resource "databricks_job" "live_store" {
     }
   }
 
-  task {
-    task_key = "load_bronze"
-
-    notebook_task {
-      notebook_path = databricks_notebook.load_bronze.path
-      base_parameters = {
-        catalog    = databricks_catalog.olist.name
-        bronze_url = databricks_external_location.bronze.url
-      }
-    }
-  }
-
+  # Tasks are listed in alphabetical order, as the Jobs API returns them.
   task {
     task_key        = "dbt_build"
     environment_key = "dbt"
@@ -279,6 +268,18 @@ resource "databricks_job" "live_store" {
       warehouse_id      = databricks_sql_endpoint.main.id
       catalog           = databricks_catalog.olist.name
       schema            = "silver"
+    }
+  }
+
+  task {
+    task_key = "load_bronze"
+
+    notebook_task {
+      notebook_path = databricks_notebook.load_bronze.path
+      base_parameters = {
+        catalog    = databricks_catalog.olist.name
+        bronze_url = databricks_external_location.bronze.url
+      }
     }
   }
 
