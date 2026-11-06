@@ -1,0 +1,10 @@
+expression ServerHostname = "adb-7405618650462630.10.azuredatabricks.net" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: adf3fa51-29db-44fd-bdb0-ae389c27ea84
+
+	annotation PBI_ResultType = Text
+
+expression HttpPath = "/sql/1.0/warehouses/ded836663ed03979" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 8f6c16e1-a1f1-4416-a3be-1b4994c6db30
+
+	annotation PBI_ResultType = Text
+

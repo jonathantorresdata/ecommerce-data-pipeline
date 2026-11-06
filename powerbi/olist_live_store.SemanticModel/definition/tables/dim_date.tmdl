@@ -1,0 +1,86 @@
+table dim_date
+	lineageTag: 899d2c35-dee8-472f-83e6-de49f263bd0e
+
+	column date_day
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: 7bb48939-2222-49cd-bc18-5191d84d355d
+		summarizeBy: none
+		sourceColumn: date_day
+
+		variation Variation
+			isDefault
+			relationship: d8bb1c75-3ace-4b5b-b4b5-1a1a8c7d3c29
+			defaultHierarchy: LocalDateTable_9db10f3b-2f95-438d-a1a0-881ff1e021f0.'Jerarquía de fechas'
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column year
+		dataType: int64
+		lineageTag: 5d2d6185-14ff-4d01-9a0a-1cd1d59dbd91
+		summarizeBy: sum
+		sourceColumn: year
+
+		annotation SummarizationSetBy = Automatic
+
+	column quarter
+		dataType: int64
+		lineageTag: 375e275a-8c07-42b0-a05a-f138a357274a
+		summarizeBy: sum
+		sourceColumn: quarter
+
+		annotation SummarizationSetBy = Automatic
+
+	column month
+		dataType: int64
+		lineageTag: d2b49cc2-a9ef-4737-9d31-ac55d3892f35
+		summarizeBy: sum
+		sourceColumn: month
+
+		annotation SummarizationSetBy = Automatic
+
+	column month_name
+		dataType: string
+		lineageTag: eebcdf40-554b-4af1-9623-c9f3e362e382
+		summarizeBy: none
+		sourceColumn: month_name
+
+	column day_of_month
+		dataType: int64
+		lineageTag: 4a3d95d4-feaa-428f-a7fc-2c04a5931b41
+		summarizeBy: sum
+		sourceColumn: day_of_month
+
+		annotation SummarizationSetBy = Automatic
+
+	column day_of_week
+		dataType: int64
+		lineageTag: f4ffe59d-ce4f-4103-aa8f-2664a7e10c6c
+		summarizeBy: sum
+		sourceColumn: day_of_week
+
+		annotation SummarizationSetBy = Automatic
+
+	column day_name
+		dataType: string
+		lineageTag: 82211ddb-849e-4bde-ab3d-bbc4e86be48a
+		summarizeBy: none
+		sourceColumn: day_name
+
+	column is_weekend
+		dataType: boolean
+		lineageTag: 4430b6f3-430b-4a9a-85b4-23bf2b846701
+		summarizeBy: none
+		sourceColumn: is_weekend
+
+	partition dim_date = m
+		mode: import
+		source =
+				let
+				    Source = Databricks.Catalogs(ServerHostname, HttpPath, [Catalog=null, Database=null, EnableAutomaticProxyDiscovery=null]),
+				    olist = Source{[Name="olist",Kind="Database"]}[Data],
+				    gold = olist{[Name="gold",Kind="Schema"]}[Data],
+				    tbl = gold{[Name="dim_date",Kind="Table"]}[Data]
+				in
+				    tbl
+

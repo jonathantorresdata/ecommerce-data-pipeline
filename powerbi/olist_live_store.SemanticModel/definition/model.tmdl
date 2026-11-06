@@ -1,0 +1,24 @@
+model Model
+	culture: es-ES
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: es-ES
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation PBI_QueryOrder = ["fact_orders","fact_order_items","dim_customers","dim_products","dim_sellers","dim_date","ServerHostname","HttpPath"]
+
+annotation __PBI_TimeIntelligenceEnabled = 1
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table fact_orders
+ref table fact_order_items
+ref table dim_customers
+ref table dim_products
+ref table dim_sellers
+ref table dim_date
+ref table DateTableTemplate_d3241740-6d5e-4da7-9928-6b9092280b52
+ref table LocalDateTable_edcabb66-1f16-4dcd-9b12-38ea9c1825e0
+ref table LocalDateTable_9db10f3b-2f95-438d-a1a0-881ff1e021f0
+

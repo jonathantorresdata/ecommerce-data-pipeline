@@ -1,0 +1,100 @@
+{
+  "version": "1.1.0",
+  "diagrams": [
+    {
+      "ordinal": 0,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 618.41434353279271,
+            "y": 122.24289917145018
+          },
+          "nodeIndex": "dim_customers",
+          "nodeLineageTag": "a8656483-1808-463b-96dc-4b9ee22f8c89",
+          "size": {
+            "height": 176,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 618.39402610002389,
+            "y": 390.60390952411706
+          },
+          "nodeIndex": "dim_date",
+          "nodeLineageTag": "899d2c35-dee8-472f-83e6-de49f263bd0e",
+          "size": {
+            "height": 296,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 50,
+            "y": 424.689232926821
+          },
+          "nodeIndex": "dim_products",
+          "nodeLineageTag": "47d8823a-1603-489c-a902-fb35f6dfd332",
+          "size": {
+            "height": 272,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 50.025611997036435,
+            "y": -50
+          },
+          "nodeIndex": "dim_sellers",
+          "nodeLineageTag": "9da6c5fe-52ff-45fa-9289-9b6c7ca81eac",
+          "size": {
+            "height": 224,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 334.19516876517287,
+            "y": 219.74941310581221
+          },
+          "nodeIndex": "fact_order_items",
+          "nodeLineageTag": "752ed309-b2da-4c33-b0cd-6b82d662e459",
+          "size": {
+            "height": 296,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 902.57732368362326,
+            "y": 249.49740816637279
+          },
+          "nodeIndex": "fact_orders",
+          "nodeLineageTag": "13129a01-d686-4116-b4a7-f0e590b888e4",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        }
+      ],
+      "name": "Todas las tablas",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    }
+  ],
+  "selectedDiagram": "Todas las tablas",
+  "defaultDiagram": "Todas las tablas"
+}

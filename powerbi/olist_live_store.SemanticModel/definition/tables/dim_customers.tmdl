@@ -1,0 +1,38 @@
+table dim_customers
+	lineageTag: a8656483-1808-463b-96dc-4b9ee22f8c89
+
+	column customer_unique_id
+		dataType: string
+		lineageTag: 18d11805-089f-4474-9ef1-8632bfeeeb7d
+		summarizeBy: none
+		sourceColumn: customer_unique_id
+
+	column zip_code_prefix
+		dataType: int64
+		lineageTag: 7d6e7e04-4a40-4bd2-9264-dc56eb689de1
+		summarizeBy: none
+		sourceColumn: zip_code_prefix
+
+	column city
+		dataType: string
+		lineageTag: 49bbacb1-c33f-4250-88b4-af0584a065e5
+		summarizeBy: none
+		sourceColumn: city
+
+	column state
+		dataType: string
+		lineageTag: 610c7805-24a6-4951-8e93-f08f13a86f33
+		summarizeBy: none
+		sourceColumn: state
+
+	partition dim_customers = m
+		mode: import
+		source =
+				let
+				    Source = Databricks.Catalogs(ServerHostname, HttpPath, [Catalog=null, Database=null, EnableAutomaticProxyDiscovery=null]),
+				    olist = Source{[Name="olist",Kind="Database"]}[Data],
+				    gold = olist{[Name="gold",Kind="Schema"]}[Data],
+				    tbl = gold{[Name="dim_customers",Kind="Table"]}[Data]
+				in
+				    tbl
+

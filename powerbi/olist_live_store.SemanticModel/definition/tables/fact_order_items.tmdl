@@ -1,0 +1,71 @@
+table fact_order_items
+	lineageTag: 752ed309-b2da-4c33-b0cd-6b82d662e459
+
+	column order_id
+		dataType: string
+		lineageTag: a321b6a8-4f8b-4aae-99ef-d3226eaedf50
+		summarizeBy: none
+		sourceColumn: order_id
+
+	column item_number
+		dataType: int64
+		lineageTag: 748c8bb3-5182-4f64-9c98-3b360fe5082b
+		summarizeBy: none
+		sourceColumn: item_number
+
+	column product_id
+		dataType: string
+		lineageTag: f6e0c719-3e09-4c6b-bc21-0ad5127dd7ef
+		summarizeBy: none
+		sourceColumn: product_id
+
+	column seller_id
+		dataType: string
+		lineageTag: 0c6e6d45-a822-47f4-a24d-89f2b06a18cb
+		summarizeBy: none
+		sourceColumn: seller_id
+
+	column customer_unique_id
+		dataType: string
+		lineageTag: 18dc6d3f-19c6-4550-aceb-47a0b58020f5
+		summarizeBy: none
+		sourceColumn: customer_unique_id
+
+	column purchase_date
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: 32e3d760-885f-492c-9730-d23d8673aaef
+		summarizeBy: none
+		sourceColumn: purchase_date
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column order_status
+		dataType: string
+		lineageTag: 31484e9f-4f45-4e75-b77d-9047876f0e86
+		summarizeBy: none
+		sourceColumn: order_status
+
+	column price
+		dataType: double
+		lineageTag: 1d0f0260-0ae5-4cec-82cc-cd311a2b70e7
+		summarizeBy: sum
+		sourceColumn: price
+
+	column freight_value
+		dataType: double
+		lineageTag: b9ba3165-cd23-4454-8a96-90dde38e2e9d
+		summarizeBy: sum
+		sourceColumn: freight_value
+
+	partition fact_order_items = m
+		mode: import
+		source =
+				let
+				    Source = Databricks.Catalogs(ServerHostname, HttpPath, [Catalog=null, Database=null, EnableAutomaticProxyDiscovery=null]),
+				    olist = Source{[Name="olist",Kind="Database"]}[Data],
+				    gold = olist{[Name="gold",Kind="Schema"]}[Data],
+				    tbl = gold{[Name="fact_order_items",Kind="Table"]}[Data]
+				in
+				    tbl
+

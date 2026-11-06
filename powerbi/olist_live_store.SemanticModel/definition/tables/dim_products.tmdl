@@ -1,0 +1,64 @@
+table dim_products
+	lineageTag: 47d8823a-1603-489c-a902-fb35f6dfd332
+
+	column product_id
+		dataType: string
+		lineageTag: 84d1322c-a30d-494f-aa8c-342874fa8572
+		summarizeBy: none
+		sourceColumn: product_id
+
+	column category_name
+		dataType: string
+		lineageTag: a947f478-0ade-4e45-9335-345f6ded8824
+		summarizeBy: none
+		sourceColumn: category_name
+
+	column category_name_english
+		dataType: string
+		lineageTag: 87d69d72-3d44-4e52-bc9d-fa39d0d17484
+		summarizeBy: none
+		sourceColumn: category_name_english
+
+	column product_photos
+		dataType: int64
+		lineageTag: 85e65a4e-a1fb-402b-a125-4fd6e0c38eb0
+		summarizeBy: sum
+		sourceColumn: product_photos
+
+	column weight_g
+		dataType: int64
+		lineageTag: 0f4f8b37-274b-466f-a616-1beeb583819e
+		summarizeBy: sum
+		sourceColumn: weight_g
+
+	column length_cm
+		dataType: int64
+		lineageTag: adb4cf2f-9122-4704-a6ea-3c5120b07a5f
+		summarizeBy: sum
+		sourceColumn: length_cm
+
+	column height_cm
+		dataType: int64
+		lineageTag: 68d004ab-e2a9-432a-8010-026166a843f7
+		summarizeBy: sum
+		sourceColumn: height_cm
+
+	column width_cm
+		dataType: int64
+		lineageTag: 028a96b4-9274-48bf-85e1-682aea589d0c
+		summarizeBy: sum
+		sourceColumn: width_cm
+
+	partition dim_products = m
+		mode: import
+		source =
+				let
+				    Source = Databricks.Catalogs(ServerHostname, HttpPath, [Catalog=null, Database=null, EnableAutomaticProxyDiscovery=null]),
+				    olist = Source{[Name="olist",Kind="Database"]}[Data],
+				    gold = olist{[Name="gold",Kind="Schema"]}[Data],
+				    tbl = gold{[Name="dim_products",Kind="Table"]}[Data]
+				in
+				    tbl
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,190 @@
+table fact_orders
+	lineageTag: 13129a01-d686-4116-b4a7-f0e590b888e4
+
+	measure Pedidos = COUNTROWS(fact_orders)
+		formatString: #,0
+		lineageTag: 68f18664-4876-4e9d-b2f4-ea19af74a7de
+
+	measure Ingresos = SUM(fact_order_items[price])
+		formatString: #,0.00
+		lineageTag: b56b1622-4d3b-48fd-b772-334eb300d72e
+
+	measure 'Ticket medio' = DIVIDE([Ingresos], [Pedidos])
+		formatString: #,0.00
+		lineageTag: c5e98321-4b98-48aa-9243-ce4eace58d99
+
+	measure 'Pedidos hoy' = CALCULATE([Pedidos], fact_orders[purchase_date] = TODAY())
+		formatString: #,0
+		lineageTag: a7d2cba8-8edf-4642-835a-92b619c56975
+
+	measure 'En camino' = CALCULATE([Pedidos], fact_orders[order_status] = "shipped")
+		formatString: #,0
+		lineageTag: e266d5d8-d3c1-47c5-ae0f-20bd49db16b2
+
+	measure 'Nota media' = AVERAGE(fact_orders[review_score])
+		formatString: 0.00
+		lineageTag: e062b725-e9ce-4c5b-ad50-352cd3059064
+
+	measure '% con retraso' = DIVIDE(CALCULATE([Pedidos], fact_orders[is_late] = TRUE()), CALCULATE([Pedidos], NOT ISBLANK(fact_orders[is_late])))
+		formatString: 0.0%
+		lineageTag: 1a5392fd-fc31-43b7-9f14-485fc417f60f
+
+	measure 'Ingresos 30 días' = CALCULATE([Ingresos], fact_order_items[purchase_date] > TODAY() - 30, fact_order_items[purchase_date] <= TODAY())
+		formatString: #,0
+		lineageTag: 65f16f24-97bc-438c-bb1d-4d97346baec1
+
+	measure 'A tiempo' = CALCULATE([Nota media], fact_orders[is_late] == FALSE())
+		formatString: 0.00
+		lineageTag: 65660665-f8b5-46c1-a794-f33478130044
+
+	measure 'Con retraso' = CALCULATE([Nota media], fact_orders[is_late] = TRUE())
+		formatString: 0.00
+		lineageTag: 6d511ec2-acf0-4752-b5d7-0f6032263691
+
+	column order_id
+		dataType: string
+		lineageTag: bdfd9765-440b-491b-9835-d389f7c719d8
+		summarizeBy: none
+		sourceColumn: order_id
+
+	column customer_unique_id
+		dataType: string
+		lineageTag: cb303653-3fa4-45d0-9ec1-35ea3d840f5e
+		summarizeBy: none
+		sourceColumn: customer_unique_id
+
+	column purchase_date
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: 649f39f7-a7f9-48ab-8f48-22594389f416
+		summarizeBy: none
+		sourceColumn: purchase_date
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column order_status
+		dataType: string
+		lineageTag: ef88573b-64d3-4f7e-8bed-7e3a2e8e187c
+		summarizeBy: none
+		sourceColumn: order_status
+
+	column item_count
+		dataType: int64
+		lineageTag: 176d3a91-c98d-4252-8b70-30a75379ff14
+		summarizeBy: sum
+		sourceColumn: item_count
+
+	column items_value
+		dataType: double
+		lineageTag: 13d88bd9-7ff1-47e6-b0d3-f14953178176
+		summarizeBy: sum
+		sourceColumn: items_value
+
+	column freight_value
+		dataType: double
+		lineageTag: c73c3db2-cb6f-47ac-8521-1fec90b3f6fe
+		summarizeBy: sum
+		sourceColumn: freight_value
+
+	column payment_value
+		dataType: double
+		lineageTag: 3469923a-eced-4c8b-998d-d26f8269844c
+		summarizeBy: sum
+		sourceColumn: payment_value
+
+	column delivery_days
+		dataType: int64
+		lineageTag: 5cc30943-4747-47f6-af58-fa972cac3b33
+		summarizeBy: sum
+		sourceColumn: delivery_days
+
+		annotation SummarizationSetBy = Automatic
+
+	column delay_days
+		dataType: int64
+		lineageTag: 233f2b72-8c3d-42a0-a07a-376e4fe379e6
+		summarizeBy: sum
+		sourceColumn: delay_days
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_late
+		dataType: boolean
+		lineageTag: 1ddcae7c-3502-48a8-9020-f9b514e3eb5b
+		summarizeBy: none
+		sourceColumn: is_late
+
+	column review_score
+		dataType: double
+		lineageTag: 60fc52c7-a6e6-4b66-857c-3c2fe61a52f6
+		summarizeBy: sum
+		sourceColumn: review_score
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_missing_delivery_date
+		dataType: boolean
+		lineageTag: 755f3fc9-c540-4290-a5bc-dee9a7c1670b
+		summarizeBy: none
+		sourceColumn: is_missing_delivery_date
+
+	column is_canceled_but_delivered
+		dataType: boolean
+		lineageTag: c05ca797-23ad-4486-af86-b5a95439c129
+		summarizeBy: none
+		sourceColumn: is_canceled_but_delivered
+
+	column updated_at
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 1ce2f793-cd4b-4165-af39-34146e8c55f6
+		summarizeBy: none
+		sourceColumn: updated_at
+
+		variation Variation
+			isDefault
+			relationship: 81d4b134-2428-43ce-ad0c-3feda3472d09
+			defaultHierarchy: LocalDateTable_edcabb66-1f16-4dcd-9b12-38ea9c1825e0.'Jerarquía de fechas'
+
+	column 'Plazo de entrega' =
+			SWITCH(
+			    TRUE(),
+			    ISBLANK(fact_orders[delivery_days]), BLANK(),
+			    fact_orders[delivery_days] <= 7, "0-7 días",
+			    fact_orders[delivery_days] <= 14, "8-14 días",
+			    fact_orders[delivery_days] <= 21, "15-21 días",
+			    fact_orders[delivery_days] <= 30, "22-30 días",
+			    fact_orders[delivery_days] <= 45, "31-45 días",
+			    "Más de 45 días"
+			)
+		lineageTag: 36c5ae50-e0de-4939-bd32-9f95e3eac8fa
+		summarizeBy: none
+		sortByColumn: 'Orden plazo'
+
+	column 'Orden plazo' =
+			SWITCH(
+			    TRUE(),
+			    ISBLANK(fact_orders[delivery_days]), BLANK(),
+			    fact_orders[delivery_days] <= 7, 1,
+			    fact_orders[delivery_days] <= 14, 2,
+			    fact_orders[delivery_days] <= 21, 3,
+			    fact_orders[delivery_days] <= 30, 4,
+			    fact_orders[delivery_days] <= 45, 5,
+			    6
+			)
+		isHidden
+		formatString: 0
+		lineageTag: 32654cc0-b37c-42cd-be9f-970aeb5379ab
+		summarizeBy: none
+
+	partition fact_orders = m
+		mode: import
+		source =
+				let
+				    Source = Databricks.Catalogs(ServerHostname, HttpPath, [Catalog=null, Database=null, EnableAutomaticProxyDiscovery=null]),
+				    olist = Source{[Name="olist",Kind="Database"]}[Data],
+				    gold = olist{[Name="gold",Kind="Schema"]}[Data],
+				    tbl = gold{[Name="fact_orders",Kind="Table"]}[Data]
+				in
+				    tbl
+
