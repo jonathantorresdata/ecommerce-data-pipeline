@@ -1,20 +1,15 @@
 # Databricks notebook source
-# Build the lakehouse in Unity Catalog: bronze tables from the raw CSV files in the
-# data lake, then the silver and gold layers from the SQL files in sql/.
+# Load the raw Olist CSV files from the data lake into the bronze schema of Unity
+# Catalog, as-is plus two lineage columns (_source_file, _loaded_at).
 #
-# Runs as the Databricks job "build-lakehouse" (see infra/main.tf). Every table is
-# created with CREATE OR REPLACE, so the build is idempotent.
-
-import re
-from pathlib import Path
+# First task of the "live-store" job (see infra/main.tf); dbt builds silver and
+# gold afterwards. Every table is created with CREATE OR REPLACE, so it is idempotent.
 
 dbutils.widgets.text("catalog", "olist")
 dbutils.widgets.text("bronze_url", "")
-dbutils.widgets.text("sql_dir", "")
 
 CATALOG = dbutils.widgets.get("catalog")
 BRONZE_URL = dbutils.widgets.get("bronze_url")
-SQL_DIR = Path(dbutils.widgets.get("sql_dir"))
 
 FILES = {
     "customers": "olist_customers_dataset.csv",
@@ -45,28 +40,10 @@ def load_bronze(table: str, file_name: str) -> int:
     return spark.table(f"bronze.{table}").count()
 
 
-def build_table(layer: str, sql_file: Path) -> int:
-    """Create or replace one table from its SQL file and return its row count.
-
-    A file in sql/databricks/<layer>/ replaces the shared one when the DuckDB SQL
-    does not run on Spark, and the local raw schema is called bronze here.
-    """
-    override = SQL_DIR / "databricks" / layer / sql_file.name
-    select = (override if override.exists() else sql_file).read_text()
-    select = re.sub(r"\braw\.", "bronze.", select).strip().rstrip(";")
-    spark.sql(f"CREATE OR REPLACE TABLE {layer}.{sql_file.stem} AS\n{select}")
-    return spark.table(f"{layer}.{sql_file.stem}").count()
-
-
 spark.sql(f"USE CATALOG {CATALOG}")
 
 for table, file_name in FILES.items():
     rows = load_bronze(table, file_name)
+    if rows == 0:
+        raise ValueError(f"Table bronze.{table} is empty")
     print(f"bronze.{table:<30} {rows:>10,} rows")
-
-for layer in ("silver", "gold"):
-    for sql_file in sorted((SQL_DIR / layer).glob("*.sql")):
-        rows = build_table(layer, sql_file)
-        if rows == 0:
-            raise ValueError(f"Table {layer}.{sql_file.stem} is empty")
-        print(f"{layer}.{sql_file.stem:<30} {rows:>10,} rows")

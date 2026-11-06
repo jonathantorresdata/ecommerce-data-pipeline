@@ -168,7 +168,37 @@ resource "databricks_cluster" "main" {
   }
 }
 
+# Serverless SQL warehouse for dbt and Power BI: starts in seconds, uses no VM quota
+# and stops after 5 idle minutes.
+resource "databricks_sql_endpoint" "main" {
+  name                      = "wh-ecommerce"
+  cluster_size              = "2X-Small"
+  min_num_clusters          = 1
+  max_num_clusters          = 1
+  auto_stop_mins            = 5
+  enable_serverless_compute = true
+  warehouse_type            = "PRO"
+}
+
+# Every workspace user (including Power BI connections) can read the catalog.
+resource "databricks_grants" "olist" {
+  catalog = databricks_catalog.olist.name
+
+  grant {
+    principal  = "account users"
+    privileges = ["USE_CATALOG", "USE_SCHEMA", "SELECT"]
+  }
+}
+
 # --- Values needed after apply ---
+
+output "databricks_host" {
+  value = azurerm_databricks_workspace.main.workspace_url
+}
+
+output "warehouse_http_path" {
+  value = databricks_sql_endpoint.main.odbc_params[0].path
+}
 
 output "workspace_url" {
   value = "https://${azurerm_databricks_workspace.main.workspace_url}"
@@ -179,51 +209,144 @@ output "storage_account_key" {
   sensitive = true
 }
 
-# --- Code: SQL files and the notebook that builds bronze, silver and gold ---
+# --- Code: bronze loader notebook and dbt project, uploaded to the workspace ---
 
 locals {
   code_root = "/Shared/ecommerce-pipeline"
-  sql_files = fileset("${path.module}/../sql", "{silver,gold,databricks}/**/*.sql")
+  dbt_files = setunion(
+    fileset("${path.module}/../dbt", "dbt_project.yml"),
+    fileset("${path.module}/../dbt", "macros/**"),
+    fileset("${path.module}/../dbt", "models/**"),
+    fileset("${path.module}/../dbt", "tests/**"),
+  )
 }
 
 resource "databricks_directory" "code" {
-  for_each = toset(concat([local.code_root], [for f in local.sql_files : "${local.code_root}/sql/${dirname(f)}"]))
+  for_each = toset(concat([local.code_root, "${local.code_root}/dbt"], [for f in local.dbt_files : "${local.code_root}/dbt/${dirname(f)}" if dirname(f) != "."]))
   path     = each.key
 }
 
-resource "databricks_workspace_file" "sql" {
-  for_each   = local.sql_files
+resource "databricks_notebook" "load_bronze" {
   depends_on = [databricks_directory.code]
-  source     = "${path.module}/../sql/${each.value}"
-  path       = "${local.code_root}/sql/${each.value}"
+  source     = "${path.module}/../databricks/load_bronze.py"
+  path       = "${local.code_root}/load_bronze"
 }
 
-resource "databricks_notebook" "build_lakehouse" {
+resource "databricks_workspace_file" "dbt" {
+  for_each   = local.dbt_files
   depends_on = [databricks_directory.code]
-  source     = "${path.module}/../databricks/build_lakehouse.py"
-  path       = "${local.code_root}/build_lakehouse"
+  source     = "${path.module}/../dbt/${each.value}"
+  path       = "${local.code_root}/dbt/${each.value}"
 }
 
-resource "databricks_job" "build_lakehouse" {
-  name = "build-lakehouse"
+# --- Job: load bronze, then dbt builds and tests silver and gold (serverless) ---
+
+resource "databricks_job" "live_store" {
+  name = "live-store"
+
+  environment {
+    environment_key = "dbt"
+    spec {
+      client       = "2"
+      dependencies = ["dbt-databricks==1.13.0"]
+    }
+  }
 
   task {
-    task_key            = "build_lakehouse"
-    existing_cluster_id = databricks_cluster.main.id
+    task_key = "load_bronze"
 
     notebook_task {
-      notebook_path = databricks_notebook.build_lakehouse.path
+      notebook_path = databricks_notebook.load_bronze.path
       base_parameters = {
         catalog    = databricks_catalog.olist.name
         bronze_url = databricks_external_location.bronze.url
-        sql_dir    = "/Workspace${local.code_root}/sql"
       }
     }
   }
 
-  depends_on = [databricks_workspace_file.sql, databricks_schema.layers]
+  task {
+    task_key        = "dbt_build"
+    environment_key = "dbt"
+
+    depends_on {
+      task_key = "load_bronze"
+    }
+
+    dbt_task {
+      source            = "WORKSPACE"
+      project_directory = "/Workspace${local.code_root}/dbt"
+      commands          = ["dbt build"]
+      warehouse_id      = databricks_sql_endpoint.main.id
+      catalog           = databricks_catalog.olist.name
+      schema            = "silver"
+    }
+  }
+
+  depends_on = [databricks_workspace_file.dbt, databricks_schema.layers]
+}
+
+# --- Orchestration: Azure Data Factory runs the job every morning ---
+
+resource "azurerm_data_factory" "main" {
+  name                = "adf-ecommerce-pipeline-jt"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+
+  identity {
+    type = "SystemAssigned"
+  }
+}
+
+# Data Factory signs in to Databricks with its managed identity (no tokens).
+resource "azurerm_role_assignment" "adf_databricks" {
+  scope                = azurerm_databricks_workspace.main.id
+  role_definition_name = "Contributor"
+  principal_id         = azurerm_data_factory.main.identity[0].principal_id
+}
+
+resource "azurerm_data_factory_linked_service_azure_databricks" "main" {
+  name                       = "ls_databricks"
+  data_factory_id            = azurerm_data_factory.main.id
+  adb_domain                 = "https://${azurerm_databricks_workspace.main.workspace_url}"
+  msi_work_space_resource_id = azurerm_databricks_workspace.main.id
+  existing_cluster_id        = databricks_cluster.main.id
+}
+
+resource "azurerm_data_factory_pipeline" "daily" {
+  name            = "pl_daily_live_store"
+  data_factory_id = azurerm_data_factory.main.id
+  description     = "Daily load of the live store: bronze, then dbt build and tests."
+
+  activities_json = jsonencode([
+    {
+      name = "run_live_store_job"
+      type = "DatabricksJob"
+      linkedServiceName = {
+        referenceName = azurerm_data_factory_linked_service_azure_databricks.main.name
+        type          = "LinkedServiceReference"
+      }
+      policy = {
+        timeout                = "0.01:00:00"
+        retry                  = 1
+        retryIntervalInSeconds = 300
+      }
+      typeProperties = {
+        jobId = tostring(databricks_job.live_store.id)
+      }
+    }
+  ])
+}
+
+resource "azurerm_data_factory_trigger_schedule" "daily" {
+  name            = "tr_daily_0600"
+  data_factory_id = azurerm_data_factory.main.id
+  pipeline_name   = azurerm_data_factory_pipeline.daily.name
+  frequency       = "Day"
+  interval        = 1
+  start_time      = "2026-11-07T05:00:00Z" # 06:00 in Spain
+  activated       = true
 }
 
 output "job_url" {
-  value = "https://${azurerm_databricks_workspace.main.workspace_url}/jobs/${databricks_job.build_lakehouse.id}"
+  value = "https://${azurerm_databricks_workspace.main.workspace_url}/jobs/${databricks_job.live_store.id}"
 }
