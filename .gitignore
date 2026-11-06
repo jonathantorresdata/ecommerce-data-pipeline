@@ -34,3 +34,9 @@ Thumbs.db
 *.tfstate.*
 *.tfplan
 crash.log
+
+# --- dbt: compiled files and logs ---
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
+logs/

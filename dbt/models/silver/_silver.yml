@@ -1,0 +1,71 @@
+version: 2
+
+models:
+  - name: orders
+    description: One row per order visible at the replay moment, with quality flags.
+    columns:
+      - name: order_id
+        tests: [unique, not_null]
+      - name: customer_id
+        tests:
+          - not_null
+          - relationships:
+              arguments: { to: ref('customers'), field: customer_id }
+      - name: order_status
+        tests:
+          - accepted_values:
+              arguments:
+                values: [delivered, shipped, processing, canceled, unavailable, invoiced, approved, created]
+      - name: purchased_at
+        tests: [not_null]
+
+  - name: customers
+    description: One row per customer record (one per order). The real person is customer_unique_id.
+    columns:
+      - name: customer_id
+        tests: [unique, not_null]
+      - name: customer_unique_id
+        tests: [not_null]
+
+  - name: order_items
+    description: One row per product within an order.
+    columns:
+      - name: order_id
+        tests:
+          - relationships:
+              arguments: { to: ref('orders'), field: order_id }
+      - name: product_id
+        tests:
+          - relationships:
+              arguments: { to: ref('products'), field: product_id }
+
+  - name: order_payments
+    description: One row per payment of an order.
+
+  - name: order_reviews
+    description: One row per review and order (review_id alone is not unique).
+    columns:
+      - name: review_score
+        tests:
+          - accepted_values:
+              arguments: { values: [1, 2, 3, 4, 5], quote: false }
+
+  - name: products
+    description: One row per product, with the English category name.
+    columns:
+      - name: product_id
+        tests: [unique, not_null]
+      - name: category_name
+        tests: [not_null]
+
+  - name: sellers
+    description: One row per seller.
+    columns:
+      - name: seller_id
+        tests: [unique, not_null]
+
+  - name: geolocation
+    description: One row per zip code prefix with average coordinates.
+    columns:
+      - name: zip_code_prefix
+        tests: [unique, not_null]

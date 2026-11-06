@@ -1,0 +1,52 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: One row per real person, with the address of their latest order.
+    columns:
+      - name: customer_unique_id
+        tests: [unique, not_null]
+
+  - name: dim_products
+    description: One row per product.
+    columns:
+      - name: product_id
+        tests: [unique, not_null]
+
+  - name: dim_sellers
+    description: One row per seller, with coordinates.
+    columns:
+      - name: seller_id
+        tests: [unique, not_null]
+
+  - name: dim_date
+    description: One row per calendar day of the replayed store.
+    columns:
+      - name: date_day
+        tests: [unique, not_null]
+
+  - name: fact_order_items
+    description: One row per product sold (grain = order_id + item_number).
+    columns:
+      - name: product_id
+        tests:
+          - relationships:
+              arguments: { to: ref('dim_products'), field: product_id }
+      - name: seller_id
+        tests:
+          - relationships:
+              arguments: { to: ref('dim_sellers'), field: seller_id }
+      - name: customer_unique_id
+        tests:
+          - relationships:
+              arguments: { to: ref('dim_customers'), field: customer_unique_id }
+
+  - name: fact_orders
+    description: One row per order with totals, delivery times and review score. Incremental (merge on order_id).
+    columns:
+      - name: order_id
+        tests: [unique, not_null]
+      - name: purchase_date
+        tests:
+          - relationships:
+              arguments: { to: ref('dim_date'), field: date_day }

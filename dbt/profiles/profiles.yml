@@ -1,0 +1,16 @@
+# Connection to Databricks. No secrets here: everything comes from environment
+# variables (see .env.example and scripts/run_dbt.sh).
+ecommerce:
+  target: local
+  outputs:
+    # From a laptop or CI: authenticates as the Terraform service principal.
+    local:
+      type: databricks
+      catalog: olist
+      schema: silver
+      host: "{{ env_var('DATABRICKS_HOST') }}"
+      http_path: "{{ env_var('DATABRICKS_HTTP_PATH') }}"
+      auth_type: oauth
+      azure_client_id: "{{ env_var('ARM_CLIENT_ID') }}"
+      azure_client_secret: "{{ env_var('ARM_CLIENT_SECRET') }}"
+      threads: 4

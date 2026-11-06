@@ -1,5 +1,5 @@
--- Databricks version of sql/gold/dim_date.sql (DuckDB's range() and isodow() do not exist in Spark SQL).
--- One row per calendar day, covering every date in the data (full years).
+-- One row per calendar day of the replayed store (full years, including future
+-- estimated delivery dates).
 SELECT
     day AS date_day,
     year(day) AS year,
@@ -10,4 +10,4 @@ SELECT
     weekday(day) + 1 AS day_of_week,
     date_format(day, 'EEEE') AS day_name,
     weekday(day) >= 5 AS is_weekend
-FROM (SELECT explode(sequence(DATE '2016-01-01', DATE '2018-12-31', INTERVAL 1 DAY)) AS day);
+FROM (SELECT explode(sequence(DATE '2025-01-01', DATE '2027-12-31', INTERVAL 1 DAY)) AS day)

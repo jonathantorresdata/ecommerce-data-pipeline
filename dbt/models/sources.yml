@@ -1,0 +1,20 @@
+version: 2
+
+sources:
+  - name: bronze
+    description: Raw Olist CSV files loaded as-is by databricks/load_bronze.py.
+    database: olist
+    schema: bronze
+    loaded_at_field: _loaded_at
+    freshness:
+      warn_after: { count: 7, period: day }
+    tables:
+      - name: orders
+      - name: order_items
+      - name: order_payments
+      - name: order_reviews
+      - name: customers
+      - name: products
+      - name: sellers
+      - name: geolocation
+      - name: category_translation
