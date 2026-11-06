@@ -106,8 +106,9 @@ resource "azurerm_databricks_workspace" "main" {
 # --- Unity Catalog: credential, external locations, catalog and schemas ---
 
 resource "databricks_storage_credential" "lake" {
-  name    = "cred_ecommerce_lake"
-  comment = "Managed identity with access to the data lake"
+  name          = "cred_ecommerce_lake"
+  force_destroy = true
+  comment       = "Managed identity with access to the data lake"
 
   azure_managed_identity {
     access_connector_id = azurerm_databricks_access_connector.lake.id
@@ -118,6 +119,7 @@ resource "databricks_storage_credential" "lake" {
 
 resource "databricks_external_location" "bronze" {
   name            = "ext_bronze"
+  force_destroy   = true
   url             = format(local.lake_url, azurerm_storage_container.bronze.name)
   credential_name = databricks_storage_credential.lake.name
   comment         = "Raw Olist CSV files (bronze layer)"
@@ -125,15 +127,17 @@ resource "databricks_external_location" "bronze" {
 
 resource "databricks_external_location" "lakehouse" {
   name            = "ext_lakehouse"
+  force_destroy   = true
   url             = format(local.lake_url, azurerm_storage_container.lakehouse.name)
   credential_name = databricks_storage_credential.lake.name
   comment         = "Delta tables for the silver and gold layers"
 }
 
 resource "databricks_catalog" "olist" {
-  name         = "olist"
-  storage_root = databricks_external_location.lakehouse.url
-  comment      = "E-commerce data pipeline (Olist dataset)"
+  name          = "olist"
+  storage_root  = databricks_external_location.lakehouse.url
+  comment       = "E-commerce data pipeline (Olist dataset)"
+  force_destroy = true # terraform destroy also drops its schemas and tables
 }
 
 resource "databricks_schema" "layers" {
