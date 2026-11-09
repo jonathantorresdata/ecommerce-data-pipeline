@@ -20,9 +20,6 @@ __pycache__/
 logs/
 *.log
 
-# --- Local assistant / personal notes ---
-CLAUDE.md
-.claude/
 
 # --- Editor and OS files ---
 .vscode/
